@@ -1,0 +1,101 @@
+class MyHashTable:
+
+    def __new__(cls, *args, **kwargs):
+        return super().__new__(cls)
+
+    def __init__(self, *args):
+        self.num_hash = 2
+        self.completion = 0
+        self.base = [... for _ in range(self.num_hash)]
+        self.stak = []
+
+        for obj in args:
+            print(obj)
+            key, value = obj
+            self.__setitem__(key, value)
+
+    def __repr__(self):
+        return str(list(self))
+
+    def __str__(self):
+        return self.__repr__()
+
+    def dynamic_expansion(self):
+        if self.completion / self.num_hash < 0.2:
+            return
+
+        temp_stak = self.stak[::]
+        temp_base = self.base[::]
+        temp_completion = self.completion
+        self.num_hash *= 2
+        self.base = [... for _ in range(self.num_hash)]
+        self.stak = []
+        self.completion = 0
+
+        for num in temp_stak:
+            for cel in temp_base[num]:
+                elem, value = cel
+                self.__setitem__(elem, value)
+        self.completion = temp_completion
+
+    def __setitem__(self, key_elem, value):
+        self.dynamic_expansion()
+        key = hash(key_elem)
+        key_hash = key % self.num_hash
+        print(key_elem, key, key_hash)
+        if self.base[key_hash] == ...:
+            self.base[key_hash] = [[key_elem, value]]
+            self.stak.append(key_hash)
+            self.completion += 1
+        else:
+            for item_base in self.base[key_hash]:
+                if item_base[0] == key:
+                    item_base[1] = value
+                    break
+            else:
+                self.base[key_hash].append([key_elem, value])
+                self.completion += 1
+
+    def add(self, key, value):
+        self.__setitem__(key, value)
+
+    def __getitem__(self, elem_key):
+        key = hash(elem_key)
+        key_hash = key % self.num_hash
+        if self.base[key_hash] == Ellipsis:
+            raise KeyError
+
+        for elem, value in self.base[key_hash]:
+            if elem == elem_key:
+                return value
+
+    def __delitem__(self, elem_key):
+        key_hash = hash(elem_key) % self.num_hash
+        if self.base[key_hash] == Ellipsis:
+            raise KeyError
+        for item in self.base[key_hash]:
+            elem, value = item
+            if elem == elem_key:
+                if len(self.base[key_hash]) == 1:
+                    for i in self.stak:
+                        if i == key_hash:
+                            del i
+                            break
+                    self.base[key_hash] = Ellipsis
+                    self.completion -= 1
+
+                else:
+                    del self.base[key_hash][item]
+                return
+
+    def __iter__(self):
+        def __iter_gen():
+            for num in self.stak:
+                for key, value in self.base[num]:
+                    yield key, value
+
+        func = __iter_gen()
+        return (next(func) for _ in range(self.completion))
+
+    def __len__(self):
+        return self.completion
